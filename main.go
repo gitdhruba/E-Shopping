@@ -1,15 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
-	"math/rand"
-	"net/http"
-	"strconv"
 
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
+	"main.go/database"
+	"main.go/router"
 )
 
+/*
 type Book struct {
 	ID     string  `json:"id"`
 	Isbn   string  `json:"isbn"`
@@ -59,19 +58,27 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 func deleteBook(w http.ResponseWriter, r *http.Request) {
 
 }
-
+*/
 func main() {
-	//init router
-	r := mux.NewRouter()
+	// Start a new fiber app
+	nf := fiber.New()
 
-	books = append(books, Book{ID: "1", Isbn: "123456", Title: "Book1", Author: &Author{Firstname: "ABC", Lastname: "EFG"}})
-	books = append(books, Book{ID: "2", Isbn: "154894", Title: "Book2", Author: &Author{Firstname: "XYZ", Lastname: "EFG"}})
-	//route handlers
-	r.HandleFunc("/api/books", getBooks).Methods("GET")
-	r.HandleFunc("/api/books/{id}", getBook).Methods("GET")
-	r.HandleFunc("/api/books", createBook).Methods("POST")
-	r.HandleFunc("/api/books/{id}", updateBook).Methods("PUT")
-	r.HandleFunc("/api/books/{id}", deleteBook).Methods("DELETE")
-	log.Fatal(http.ListenAndServe(":8000", r))
+	//connect database
+	database.ConnectDB()
 
+	//create router
+	router.SetupRoutes(nf)
+
+	/*nf.Use(func(c *fiber.Ctx) error {
+		return c.SendStatus(404) // => 404 "Not Found"
+	})
+	*/
+	//listen to port 8000
+	log.Fatal(nf.Listen(":8000"))
+
+	/*
+		books = append(books, Book{ID: "1", Isbn: "123456", Title: "Book1", Author: &Author{Firstname: "ABC", Lastname: "EFG"}})
+		books = append(books, Book{ID: "2", Isbn: "154894", Title: "Book2", Author: &Author{Firstname: "XYZ", Lastname: "EFG"}})
+
+	*/
 }
