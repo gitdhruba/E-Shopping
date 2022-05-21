@@ -73,6 +73,9 @@ func main() {
 		return c.SendStatus(404) // => 404 "Not Found"
 	})
 	*/
+
+	nf.Static("/", "./fend")
+
 	//listen to port 8000
 	log.Fatal(nf.Listen(":8000"))
 
