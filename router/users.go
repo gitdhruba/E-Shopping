@@ -76,19 +76,16 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	return nil
+	// setting up the authorization cookies
+	accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
+	accessCookie, refreshCookie := util.GetAuthCookies(accessToken, refreshToken)
+	c.Cookie(accessCookie)
+	c.Cookie(refreshCookie)
 
-	/*
-		// setting up the authorization cookies
-		accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
-		accessCookie, refreshCookie := util.GetAuthCookies(accessToken, refreshToken)
-		c.Cookie(accessCookie)
-		c.Cookie(refreshCookie)
-
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"access_token":  accessToken,
-			"refresh_token": refreshToken,
-		})*/
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
 }
 
 /*

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 	"main.go/database"
 	"main.go/router"
@@ -77,7 +75,7 @@ func main() {
 	nf.Static("/", "./fend")
 
 	//listen to port 8000
-	log.Fatal(nf.Listen(":8000"))
+	nf.Listen(":8000")
 
 	/*
 		books = append(books, Book{ID: "1", Isbn: "123456", Title: "Book1", Author: &Author{Firstname: "ABC", Lastname: "EFG"}})
