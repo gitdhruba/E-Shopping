@@ -2,7 +2,7 @@ package router
 
 import (
 	"math/rand"
-	//"time"
+	"time"
 
 	db "main.go/database"
 	"main.go/models"
@@ -10,22 +10,23 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	//"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 )
 
-//var jwtKey = []byte("key")
+var jwtKey = []byte("key")
 
 // SetupUserRoutes func sets up all the user routes
 func SetupUserRoutes() {
-	USER.Post("/signup", CreateUser) // Sign Up a user
-	//USER.Post("/signin", LoginUser)               // Sign In a user
-	//USER.Get("/get-access-token", GetAccessToken) // returns a new access_token
+	USER.Post("/signup", CreateUser)              // Sign Up a user
+	USER.Post("/signin", LoginUser)               // Sign In a user
+	USER.Get("/get-access-token", GetAccessToken) // returns a new access_token
+	//USER.Get("/authenticated", hello)
 
 	// privUser handles all the private user routes that requires authentication
 	privUser := USER.Group("/private")
 	privUser.Use(util.SecureAuth()) // middleware to secure all routes for this group
-	//privUser.Get("/user", GetUserData)
+	privUser.Get("/user", GetUserData)
 
 }
 
@@ -88,13 +89,14 @@ func CreateUser(c *fiber.Ctx) error {
 	})
 }
 
-/*
 // LoginUser route logins a user in the app
 func LoginUser(c *fiber.Ctx) error {
 	type LoginInput struct {
 		Identity string `json:"identity"`
 		Password string `json:"password"`
 	}
+
+	//st := false
 
 	input := new(LoginInput)
 
@@ -115,11 +117,15 @@ func LoginUser(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"error": true, "general": "Invalid Credentials."})
 	}
 
+	//st = true
+
 	// setting up the authorization cookies
 	accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
 	accessCookie, refreshCookie := util.GetAuthCookies(accessToken, refreshToken)
 	c.Cookie(accessCookie)
 	c.Cookie(refreshCookie)
+
+	c.Redirect("http://127.0.0.1:8000/api/user/private/user")
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"access_token":  accessToken,
@@ -184,7 +190,7 @@ func GetAccessToken(c *fiber.Ctx) error {
 	PRIVATE ROUTES
 */
 
-/*// GetUserData returns the details of the user signed in
+// GetUserData returns the details of the user signed in
 func GetUserData(c *fiber.Ctx) error {
 	id := c.Locals("id")
 
@@ -195,4 +201,3 @@ func GetUserData(c *fiber.Ctx) error {
 
 	return c.JSON(u)
 }
-*/

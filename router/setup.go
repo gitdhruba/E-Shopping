@@ -14,9 +14,11 @@ func hello(c *fiber.Ctx) error {
 // SetupRoutes setups all the Routes
 func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
-
-	api.Get("/", hello)
+	auth := app.Group("/authenticated")
+	//api.Get("/", hello)
+	auth.Get("/", hello)
 
 	USER = api.Group("/user")
 	SetupUserRoutes()
+
 }
