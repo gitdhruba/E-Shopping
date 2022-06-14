@@ -1,12 +1,15 @@
 package router
 
 import (
+	//"fmt"
 	"math/rand"
 	"time"
 
 	db "main.go/database"
 	"main.go/models"
 	"main.go/util"
+
+	//"main.go/private"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -26,7 +29,8 @@ func SetupUserRoutes() {
 	// privUser handles all the private user routes that requires authentication
 	privUser := USER.Group("/private")
 	privUser.Use(util.SecureAuth()) // middleware to secure all routes for this group
-	privUser.Get("/user", GetUserData)
+	//privUser.Get("/user", GetUserData)
+	//privUser.Post("/logout", private.LogOut)
 
 }
 
@@ -77,7 +81,7 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// setting up the authorization cookies
+	/*// setting up the authorization cookies
 	accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
 	accessCookie, refreshCookie := util.GetAuthCookies(accessToken, refreshToken)
 	c.Cookie(accessCookie)
@@ -86,7 +90,9 @@ func CreateUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
-	})
+	})*/
+
+	return c.Redirect("/", 301)
 }
 
 // LoginUser route logins a user in the app
@@ -125,12 +131,18 @@ func LoginUser(c *fiber.Ctx) error {
 	c.Cookie(accessCookie)
 	c.Cookie(refreshCookie)
 
-	c.Redirect("http://127.0.0.1:8000/api/user/private/user")
+	//c.Path("http://127.0.0.1:8000/api/user/private/user")
+	//return c.RestartRouting()
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	//fmt.Println(input)
+
+	return c.Redirect("/api/user/private/user", 301)
+
+	/*return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error":         false,
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
-	})
+	})*/
 }
 
 // GetAccessToken generates and sends a new access token iff there is a valid refresh token

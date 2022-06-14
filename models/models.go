@@ -38,3 +38,11 @@ func (base *Base) AfterUpdate(tx *gorm.DB) error {
 	base.UpdatedAt = GenerateISOString()
 	return nil
 }
+
+//Item contains the common structure of each entries by user
+type Item struct {
+	user  string `json:"username"`
+	id    string `json:"bookid"`
+	isbn  string `json:"isbn"`
+	price uint64 `json:"price"`
+}

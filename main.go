@@ -72,7 +72,8 @@ func main() {
 	})
 	*/
 
-	nf.Static("/", "./fend")
+	nf.Static("/", "./fend/root")
+	nf.Static("/api/user/private/user", "./fend/private")
 
 	//listen to port 8000
 	nf.Listen(":8000")
