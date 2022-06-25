@@ -2,14 +2,14 @@ package router
 
 import (
 	//"fmt"
+
 	"math/rand"
 	"time"
 
 	db "main.go/database"
 	"main.go/models"
+	"main.go/private"
 	"main.go/util"
-
-	//"main.go/private"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -31,6 +31,8 @@ func SetupUserRoutes() {
 	privUser.Use(util.SecureAuth()) // middleware to secure all routes for this group
 	//privUser.Get("/user", GetUserData)
 	//privUser.Post("/logout", private.LogOut)
+	privUser.Post("/addentry", private.CreateEntry)
+	privUser.Post("/deleteentry", private.DeleteEntry)
 
 }
 
@@ -81,6 +83,7 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
+	//db.DB.Exec(`CREATE TABLE %s {id int, bookname VARCHAR(100), isbn(50), price int8}`, u.Username)
 	/*// setting up the authorization cookies
 	accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
 	accessCookie, refreshCookie := util.GetAuthCookies(accessToken, refreshToken)
@@ -126,15 +129,21 @@ func LoginUser(c *fiber.Ctx) error {
 	//st = true
 
 	// setting up the authorization cookies
-	accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
+	/*accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
 	accessCookie, refreshCookie := util.GetAuthCookies(accessToken, refreshToken)
 	c.Cookie(accessCookie)
-	c.Cookie(refreshCookie)
+	c.Cookie(refreshCookie)*/
+
+	accessToken := util.GenerateTokens(u.UUID.String())
+	accessCookie := util.GetAuthCookies(accessToken)
+	c.Cookie(accessCookie)
 
 	//c.Path("http://127.0.0.1:8000/api/user/private/user")
 	//return c.RestartRouting()
 
 	//fmt.Println(input)
+
+	models.VerifiedUser = input.Identity
 
 	return c.Redirect("/api/user/private/user", 301)
 

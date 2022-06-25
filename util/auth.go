@@ -14,11 +14,17 @@ import (
 var jwtKey = []byte(os.Getenv("PRIV_KEY"))
 
 // GenerateTokens returns the access and refresh tokens
-func GenerateTokens(uuid string) (string, string) {
+/*func GenerateTokens(uuid string) (string, string) {
 	claim, accessToken := GenerateAccessClaims(uuid)
 	refreshToken := GenerateRefreshClaims(claim)
 
 	return accessToken, refreshToken
+}*/
+func GenerateTokens(uuid string) string {
+	_, accessToken := GenerateAccessClaims(uuid)
+	//refreshToken := GenerateRefreshClaims(claim)
+
+	return accessToken
 }
 
 // GenerateAccessClaims returns a claim and a acess_token string
@@ -120,7 +126,7 @@ func SecureAuth() func(*fiber.Ctx) error {
 }
 
 // GetAuthCookies sends two cookies of type access_token and refresh_token
-func GetAuthCookies(accessToken, refreshToken string) (*fiber.Cookie, *fiber.Cookie) {
+/*func GetAuthCookies(accessToken, refreshToken string) (*fiber.Cookie, *fiber.Cookie) {
 	accessCookie := &fiber.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
@@ -138,4 +144,16 @@ func GetAuthCookies(accessToken, refreshToken string) (*fiber.Cookie, *fiber.Coo
 	}
 
 	return accessCookie, refreshCookie
+}*/
+
+func GetAuthCookies(accessToken string) *fiber.Cookie {
+	accessCookie := &fiber.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Expires:  time.Now().Add(24 * time.Hour),
+		HTTPOnly: true,
+		Secure:   true,
+	}
+
+	return accessCookie
 }

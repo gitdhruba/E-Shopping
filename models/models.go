@@ -41,8 +41,9 @@ func (base *Base) AfterUpdate(tx *gorm.DB) error {
 
 //Item contains the common structure of each entries by user
 type Item struct {
-	user  string `json:"username"`
-	id    string `json:"bookid"`
-	isbn  string `json:"isbn"`
-	price uint64 `json:"price"`
+	User     string `json:"username"`
+	Bookid   uint32 `json:"bookid"`
+	Bookname string `json:"bookname"`
+	Isbn     string `json:"isbn"`
+	Price    uint64 `json:"price"`
 }

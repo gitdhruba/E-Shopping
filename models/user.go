@@ -25,3 +25,5 @@ type Claims struct {
 	jwt.StandardClaims
 	ID uint `gorm:"primaryKey"`
 }
+
+var VerifiedUser string
