@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"main.go/database"
 	"main.go/router"
@@ -26,5 +29,8 @@ func main() {
 
 	//listen to port 8000
 	nf.Listen(":8000")
+
+	t := fmt.Sprint(time.Now().Unix())
+	fmt.Println(t)
 
 }

@@ -39,11 +39,31 @@ func (base *Base) AfterUpdate(tx *gorm.DB) error {
 	return nil
 }
 
-//Item contains the common structure of each entries by user
+//Item contains the common structure of each book purchased by user
 type Item struct {
-	User     string `json:"username"`
-	Bookid   uint32 `json:"bookid"`
-	Bookname string `json:"bookname"`
-	Isbn     string `json:"isbn"`
-	Price    uint64 `json:"price"`
+	User       string `json:"username"`
+	Bookid     uint32 `json:"bookid"`
+	Bookname   string `json:"bookname"`
+	Time       string `json:"time"`
+	Quantity   uint32 `json:"quantity"`
+	Totalprice uint64 `json:"price"`
+}
+
+//stock model
+type BookStock struct {
+	Bookid   uint32
+	Bookname string
+	Isbn     string
+	Quantity uint32
+	Price    uint64
+}
+
+//cart model
+type Cart struct {
+	User       string `json:"username"`
+	Bookid     uint32 `json:"bookid"`
+	Bookname   string `json:"bookname"`
+	Time       string `json:"time"`
+	Quantity   uint32 `json:"quantity"`
+	Totalprice uint64 `json:"price"`
 }

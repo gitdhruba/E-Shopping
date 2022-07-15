@@ -20,20 +20,20 @@ var jwtKey = []byte(os.Getenv("PRIV_KEY"))
 
 	return accessToken, refreshToken
 }*/
-func GenerateTokens(uuid string) string {
-	_, accessToken := GenerateAccessClaims(uuid)
+func GenerateTokens(uname string) string {
+	_, accessToken := GenerateAccessClaims(uname)
 	//refreshToken := GenerateRefreshClaims(claim)
 
 	return accessToken
 }
 
 // GenerateAccessClaims returns a claim and a acess_token string
-func GenerateAccessClaims(uuid string) (*models.Claims, string) {
+func GenerateAccessClaims(uname string) (*models.Claims, string) {
 
 	t := time.Now()
 	claim := &models.Claims{
 		StandardClaims: jwt.StandardClaims{
-			Issuer:    uuid,
+			Issuer:    uname,
 			ExpiresAt: t.Add(15 * time.Minute).Unix(),
 			Subject:   "access_token",
 			IssuedAt:  t.Unix(),
