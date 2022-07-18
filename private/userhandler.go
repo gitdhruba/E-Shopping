@@ -1,6 +1,8 @@
 package private
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	db "main.go/database"
 	"main.go/models"
@@ -12,9 +14,7 @@ func DeleteUser(c *fiber.Ctx) error {
 	i := new(models.Item)
 
 	if res := db.DB.Where("User = ?", models.VerifiedUser).Delete(&i); res.RowsAffected < 0 {
-		return c.JSON(fiber.Map{
-			"msg": "unexpected error occured while deleting items",
-		})
+		fmt.Println("no purchased item")
 	}
 
 	//delete user

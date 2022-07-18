@@ -1,11 +1,19 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+//Get Current Date & time in string format
+func GetTimeNow() string {
+	currenttime := time.Now()
+	t := fmt.Sprintf("%d-%d-%d %d:%d:%d", currenttime.Year(), currenttime.Month(), currenttime.Day(), currenttime.Hour(), currenttime.Minute(), currenttime.Second())
+	return t
+}
 
 // GenerateISOString generates a time string equivalent to Date.now().toISOString in JavaScript
 func GenerateISOString() string {
@@ -53,7 +61,6 @@ type Item struct {
 type BookStock struct {
 	Bookid   uint32
 	Bookname string
-	Isbn     string
 	Quantity uint32
 	Price    uint64
 }

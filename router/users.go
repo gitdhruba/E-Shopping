@@ -3,12 +3,12 @@ package router
 import (
 	//"fmt"
 
+	"fmt"
 	"math/rand"
 	"time"
 
 	db "main.go/database"
 	"main.go/models"
-	"main.go/private"
 	"main.go/util"
 
 	"golang.org/x/crypto/bcrypt"
@@ -20,7 +20,7 @@ import (
 var jwtKey = []byte("key")
 
 // SetupUserRoutes func sets up all the user routes
-func SetupUserRoutes() {
+/*func SetupUserRoutes() {
 	USER.Post("/signup", CreateUser)              // Sign Up a user
 	USER.Post("/signin", LoginUser)               // Sign In a user
 	USER.Get("/get-access-token", GetAccessToken) // returns a new access_token
@@ -35,7 +35,7 @@ func SetupUserRoutes() {
 	privUser.Post("/deleteentry", private.DeleteEntry)
 
 }
-
+*/
 // CreateUser route registers a User into the database
 func CreateUser(c *fiber.Ctx) error {
 	u := new(models.User)
@@ -145,7 +145,7 @@ func LoginUser(c *fiber.Ctx) error {
 
 	models.VerifiedUser = input.Identity
 
-	return c.Redirect("/api/user/private/user", 301)
+	return c.Redirect("/api/user/private/", 301)
 
 	/*return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":         false,
@@ -221,4 +221,22 @@ func GetUserData(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(u)
+}
+
+//funtion to get bookstock
+func GetBookStock(c *fiber.Ctx) error {
+
+	var Books []models.BookStock
+	var Book models.BookStock
+
+	rows, _ := db.DB.Model(&models.BookStock{}).Rows()
+	defer rows.Close()
+	for rows.Next() {
+		db.DB.ScanRows(rows, &Book)
+		Books = append(Books, Book)
+	}
+
+	fmt.Println(Books)
+
+	return c.JSON(Books)
 }
