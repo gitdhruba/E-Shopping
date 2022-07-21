@@ -3,15 +3,23 @@ package router
 import (
 	//"fmt"
 
+	"context"
+	"encoding/json"
 	"fmt"
-	"math/rand"
+	"io/ioutil"
+
+	//"math/rand"
+	"net/http"
 	"time"
 
+	"main.go/config"
 	db "main.go/database"
 	"main.go/models"
 	"main.go/util"
 
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -19,23 +27,21 @@ import (
 
 var jwtKey = []byte("key")
 
-// SetupUserRoutes func sets up all the user routes
-/*func SetupUserRoutes() {
-	USER.Post("/signup", CreateUser)              // Sign Up a user
-	USER.Post("/signin", LoginUser)               // Sign In a user
-	USER.Get("/get-access-token", GetAccessToken) // returns a new access_token
-	//USER.Get("/authenticated", hello)
+//variables required for google authentication
+var (
+	googleOauthConfig = &oauth2.Config{
+		RedirectURL:  "http://localhost:8000/api/user/googlecallback",
+		ClientID:     config.Config("GOOGLE_CLIENT_ID"),
+		ClientSecret: config.Config("GOOGLE_CLIENT_SECRET"),
+		Scopes: []string{"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		},
+		Endpoint: google.Endpoint,
+	}
+	randomstate    = "random-state"
+	googlepassword = "gpasswd"
+)
 
-	// privUser handles all the private user routes that requires authentication
-	privUser := USER.Group("/private")
-	privUser.Use(util.SecureAuth()) // middleware to secure all routes for this group
-	//privUser.Get("/user", GetUserData)
-	//privUser.Post("/logout", private.LogOut)
-	privUser.Post("/addentry", private.CreateEntry)
-	privUser.Post("/deleteentry", private.DeleteEntry)
-
-}
-*/
 // CreateUser route registers a User into the database
 func CreateUser(c *fiber.Ctx) error {
 	u := new(models.User)
@@ -68,7 +74,7 @@ func CreateUser(c *fiber.Ctx) error {
 	password := []byte(u.Password)
 	hashedPassword, err := bcrypt.GenerateFromPassword(
 		password,
-		rand.Intn(bcrypt.MaxCost-bcrypt.MinCost)+bcrypt.MinCost,
+		8,
 	)
 
 	if err != nil {
@@ -83,18 +89,7 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	//db.DB.Exec(`CREATE TABLE %s {id int, bookname VARCHAR(100), isbn(50), price int8}`, u.Username)
-	/*// setting up the authorization cookies
-	accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
-	accessCookie, refreshCookie := util.GetAuthCookies(accessToken, refreshToken)
-	c.Cookie(accessCookie)
-	c.Cookie(refreshCookie)
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})*/
-
+	//redirect to home
 	return c.Redirect("/", 301)
 }
 
@@ -105,12 +100,14 @@ func LoginUser(c *fiber.Ctx) error {
 		Password string `json:"password"`
 	}
 
-	//st := false
-
 	input := new(LoginInput)
 
 	if err := c.BodyParser(input); err != nil {
-		return c.JSON(fiber.Map{"error": true, "input": "Please review your input"})
+		return c.JSON(fiber.Map{"redirected": false, "url": "", "msg": "Please review your input"})
+	}
+
+	if input.Password == googlepassword {
+		return c.JSON(fiber.Map{"redirected": false, "url": "", "msg": "Invalid Credentials."})
 	}
 
 	u := new(models.User)
@@ -118,40 +115,28 @@ func LoginUser(c *fiber.Ctx) error {
 		&models.User{Email: input.Identity}).Or(
 		&models.User{Username: input.Identity},
 	).First(&u); res.RowsAffected <= 0 {
-		return c.JSON(fiber.Map{"error": true, "general": "Invalid Credentials."})
+		return c.JSON(fiber.Map{"redirected": false, "url": "", "msg": "Invalid Credentials."})
 	}
 
 	// Comparing the password with the hash
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(input.Password)); err != nil {
-		return c.JSON(fiber.Map{"error": true, "general": "Invalid Credentials."})
+		return c.JSON(fiber.Map{"redirected": false, "url": "", "msg": "Incorrect Password"})
 	}
 
-	//st = true
-
 	// setting up the authorization cookies
-	/*accessToken, refreshToken := util.GenerateTokens(u.UUID.String())
-	accessCookie, refreshCookie := util.GetAuthCookies(accessToken, refreshToken)
-	c.Cookie(accessCookie)
-	c.Cookie(refreshCookie)*/
-
 	accessToken := util.GenerateTokens(u.Username)
 	accessCookie := util.GetAuthCookies(accessToken)
 	c.Cookie(accessCookie)
+	c.Cookie(&fiber.Cookie{
+		Name:     "username",
+		Value:    u.Username,
+		HTTPOnly: true,
+		Secure:   true,
+	})
 
-	//c.Path("http://127.0.0.1:8000/api/user/private/user")
-	//return c.RestartRouting()
-
-	//fmt.Println(input)
-
-	models.VerifiedUser = input.Identity
-
+	//redirect to private route
 	return c.Redirect("/api/user/private/", 301)
 
-	/*return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"error":         false,
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})*/
 }
 
 // GetAccessToken generates and sends a new access token iff there is a valid refresh token
@@ -207,22 +192,6 @@ func GetAccessToken(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"access_token": accessToken})
 }
 
-/*
-	PRIVATE ROUTES
-*/
-
-// GetUserData returns the details of the user signed in
-func GetUserData(c *fiber.Ctx) error {
-	id := c.Locals("id")
-
-	u := new(models.User)
-	if res := db.DB.Where("uuid = ?", id).First(&u); res.RowsAffected <= 0 {
-		return c.JSON(fiber.Map{"error": true, "general": "Cannot find the User"})
-	}
-
-	return c.JSON(u)
-}
-
 //funtion to get bookstock
 func GetBookStock(c *fiber.Ctx) error {
 
@@ -233,10 +202,124 @@ func GetBookStock(c *fiber.Ctx) error {
 	defer rows.Close()
 	for rows.Next() {
 		db.DB.ScanRows(rows, &Book)
-		Books = append(Books, Book)
+		if Book.Quantity > 0 {
+			Books = append(Books, Book)
+		}
 	}
 
 	fmt.Println(Books)
 
 	return c.JSON(Books)
+}
+
+// GetUsername returns the username of the user signed in
+func GetUsername(c *fiber.Ctx) error {
+	u := c.Cookies("username")
+	return c.JSON(u)
+}
+
+/*
+   These functions are required for google login
+*/
+
+//function for google login
+func GoogleLogin(c *fiber.Ctx) error {
+	url := googleOauthConfig.AuthCodeURL(randomstate)
+	return c.Redirect(url)
+}
+
+//function for google callback
+func GoogleCallback(c *fiber.Ctx) error {
+
+	if c.FormValue("state") != randomstate {
+		fmt.Println("state not valid")
+		return nil
+	}
+
+	token, err := googleOauthConfig.Exchange(context.Background(), c.Query("code"))
+	if err != nil {
+		fmt.Println("couldnot get token")
+		fmt.Println(err.Error())
+		return nil
+	}
+
+	response, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
+	if err != nil {
+		fmt.Println("could not create get request")
+		return nil
+	}
+
+	defer response.Body.Close()
+	content, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println("couldnot read response")
+		return nil
+	}
+
+	resStr := string(content)
+	resBytes := []byte(resStr)
+	var userdata map[string]interface{}
+	if err := json.Unmarshal(resBytes, &userdata); err != nil {
+		fmt.Println("could not parse data")
+		return nil
+	}
+
+	//fmt.Printf("response: %s", userdata)
+	username := userdata["name"].(string)
+	email := userdata["email"].(string)
+	fmt.Println(username)
+	fmt.Println(email)
+
+	if count := db.DB.Where(&models.User{Username: username}).First(new(models.User)).RowsAffected; count > 0 {
+		u := new(models.User)
+		if res := db.DB.Where(
+			&models.User{Username: username, Email: email}).First(&u); res.RowsAffected <= 0 {
+			return c.JSON(fiber.Map{"error": true, "msg": "username already exists"})
+		}
+		if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(googlepassword)); err != nil {
+			return c.JSON(fiber.Map{
+				"error": true,
+				"msg":   "username already exists",
+			})
+		}
+
+	} else {
+		u := new(models.User)
+
+		// Hashing the password with a random salt
+		password := []byte(googlepassword)
+		hashedPassword, err := bcrypt.GenerateFromPassword(
+			password,
+			8,
+		)
+		if err != nil {
+			panic(err)
+		}
+		u.Password = string(hashedPassword)
+		u.Username = username
+		u.Email = email
+
+		if err := db.DB.Create(&u).Error; err != nil {
+			fmt.Println("insertion error")
+			return c.JSON(fiber.Map{
+				"error":   true,
+				"general": "Something went wrong, please try again later. 😕",
+			})
+		}
+
+	}
+
+	//create accestoken and cookie
+	accessToken := util.GenerateTokens(username)
+	accessCookie := util.GetAuthCookies(accessToken)
+	c.Cookie(accessCookie)
+	c.Cookie(&fiber.Cookie{
+		Name:     "username",
+		Value:    username,
+		HTTPOnly: true,
+		Secure:   true,
+	})
+
+	//redirect to private route
+	return c.Redirect("/api/user/private/", 301)
 }

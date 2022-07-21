@@ -31,7 +31,7 @@ func CreateEntry(c *fiber.Ctx) error {
 			"msg":   "incorrect input",
 		})
 	}
-	//fmt.Println(models.VerifiedUser)
+	VerifiedUser := c.Cookies("username")
 	var book models.BookStock
 	res := db.DB.Where("bookid = ?", input.Bookid).Find(&book)
 	res.Scan(&book)
@@ -39,7 +39,7 @@ func CreateEntry(c *fiber.Ctx) error {
 	t := models.GetTimeNow()
 	fmt.Println(t)
 	item := models.Item{
-		User:       fmt.Sprint(models.VerifiedUser),
+		User:       VerifiedUser,
 		Bookid:     book.Bookid,
 		Bookname:   book.Bookname,
 		Time:       t,
@@ -95,13 +95,14 @@ func DeleteEntry(c *fiber.Ctx) error {
 		})
 	}
 
+	VerifiedUser := c.Cookies("username")
 	var book models.BookStock
 	resbook := db.DB.Where("bookid = ?", input.Bookid).Find(&models.BookStock{})
 	resbook.Scan(&book)
 	fmt.Println(book)
 
 	var item models.Item
-	resitem := db.DB.Where("\"user\" = ? AND bookid = ? AND \"time\" = ?", models.VerifiedUser, book.Bookid, input.Time).Find(&item)
+	resitem := db.DB.Where("\"user\" = ? AND bookid = ? AND \"time\" = ?", VerifiedUser, book.Bookid, input.Time).Find(&item)
 	resitem.Scan(&item)
 	fmt.Println(item)
 
@@ -114,7 +115,7 @@ func DeleteEntry(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := db.DB.Where("\"user\" = ? AND bookid = ? AND \"time\" = ?", models.VerifiedUser, book.Bookid, input.Time).Delete(&models.Item{}).Error; err != nil {
+	if err := db.DB.Where("\"user\" = ? AND bookid = ? AND \"time\" = ?", VerifiedUser, book.Bookid, input.Time).Delete(&models.Item{}).Error; err != nil {
 		return c.JSON(fiber.Map{
 			"error":  true,
 			"status": "Deletion error",
@@ -143,6 +144,7 @@ func AddtoCart(c *fiber.Ctx) error {
 		})
 	}
 
+	VerifiedUser := c.Cookies("username")
 	var book models.BookStock
 	var cart models.Cart
 	res := db.DB.Where("bookid = ?", input.Bookid).Find(&models.BookStock{})
@@ -150,9 +152,9 @@ func AddtoCart(c *fiber.Ctx) error {
 
 	t := models.GetTimeNow()
 	fmt.Println(t)
-	if r := db.DB.Where("\"user\" = ? AND bookid = ?", models.VerifiedUser, book.Bookid).Find(&models.Cart{}); r.RowsAffected <= 0 {
+	if r := db.DB.Where("\"user\" = ? AND bookid = ?", VerifiedUser, book.Bookid).Find(&models.Cart{}); r.RowsAffected <= 0 {
 		cartitem := models.Cart{
-			User:       fmt.Sprint(models.VerifiedUser),
+			User:       VerifiedUser,
 			Bookid:     input.Bookid,
 			Bookname:   book.Bookname,
 			Time:       t,
@@ -184,7 +186,7 @@ func AddtoCart(c *fiber.Ctx) error {
 			})
 		}
 		cart.Totalprice = uint64(cart.Quantity) * book.Price
-		if err := db.DB.Model(&models.Cart{}).Where("\"user\" = ? AND bookid = ?", models.VerifiedUser, book.Bookid).Updates(models.Cart{Time: t, Quantity: cart.Quantity, Totalprice: cart.Totalprice}).Error; err != nil {
+		if err := db.DB.Model(&models.Cart{}).Where("\"user\" = ? AND bookid = ?", VerifiedUser, book.Bookid).Updates(models.Cart{Time: t, Quantity: cart.Quantity, Totalprice: cart.Totalprice}).Error; err != nil {
 			return c.JSON(fiber.Map{
 				"error": true,
 				"msg":   "insertion error",
@@ -214,8 +216,9 @@ func DeletefromCart(c *fiber.Ctx) error {
 			"status": "incorrect input",
 		})
 	}
+	VerifiedUser := c.Cookies("username")
 
-	err := db.DB.Where("\"user\" = ? AND bookid = ? AND \"time\" = ?", models.VerifiedUser, input.Bookid, input.Time).Delete(&models.Cart{}).Error
+	err := db.DB.Where("\"user\" = ? AND bookid = ? AND \"time\" = ?", VerifiedUser, input.Bookid, input.Time).Delete(&models.Cart{}).Error
 	if err != nil {
 		fmt.Println("error occured while deleting cart")
 		return c.JSON(fiber.Map{
@@ -237,8 +240,9 @@ func PlaceCartOrders(c *fiber.Ctx) error {
 	var cart models.Cart
 	var skippeditems []models.Cart
 	var qnt uint32
+	VerifiedUser := c.Cookies("username")
 
-	rows, _ := db.DB.Model(&models.Cart{}).Where("\"user\" = ?", models.VerifiedUser).Rows()
+	rows, _ := db.DB.Model(&models.Cart{}).Where("\"user\" = ?", VerifiedUser).Rows()
 	defer rows.Close()
 
 	for rows.Next() {
@@ -274,7 +278,7 @@ func PlaceCartOrders(c *fiber.Ctx) error {
 
 	}
 
-	if err := db.DB.Where("\"user\" = ?", models.VerifiedUser).Delete(&models.Cart{}).Error; err != nil {
+	if err := db.DB.Where("\"user\" = ?", VerifiedUser).Delete(&models.Cart{}).Error; err != nil {
 		fmt.Println("deletion error")
 	}
 
@@ -296,8 +300,9 @@ func GetCartData(c *fiber.Ctx) error {
 	var cartitems []cartdata
 	var cartitem cartdata
 	var cart models.Cart
+	VerifiedUser := c.Cookies("username")
 
-	rows, _ := db.DB.Model(&models.Cart{}).Where("\"user\" = ?", models.VerifiedUser).Rows()
+	rows, _ := db.DB.Model(&models.Cart{}).Where("\"user\" = ?", VerifiedUser).Rows()
 	defer rows.Close()
 	for rows.Next() {
 		db.DB.ScanRows(rows, &cart)
@@ -326,8 +331,9 @@ func GetPurchaseData(c *fiber.Ctx) error {
 	var purchaseditems []purchasedata
 	var purchaseditem purchasedata
 	var item models.Item
+	VerifiedUser := c.Cookies("username")
 
-	rows, _ := db.DB.Model(&models.Item{}).Where("\"user\" = ?", models.VerifiedUser).Rows()
+	rows, _ := db.DB.Model(&models.Item{}).Where("\"user\" = ?", VerifiedUser).Rows()
 	defer rows.Close()
 	for rows.Next() {
 		db.DB.ScanRows(rows, &item)

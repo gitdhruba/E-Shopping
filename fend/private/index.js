@@ -1,7 +1,17 @@
    var BookList = document.getElementById("BookList")
+   var user = document.getElementById("user")
    window['my'] = document.getElementById("Searchbar").value
    var searchvalue = document.getElementById("Searchbar").value
    localStorage.setItem('searchvalue', searchvalue);
+
+   const DisplayUser = async() => {
+    const response = await fetch("/api/user/getusername");
+    if (response.status !== 200) {
+        console.log("cannot fetch data");
+    }
+    let data = await response.json();
+    user.innerText = "Welcome "+data;
+};
 
    const DisplayBooks = async() => {
        const response = await fetch("/api/user/getbookstock");

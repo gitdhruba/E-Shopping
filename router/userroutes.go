@@ -7,11 +7,13 @@ import (
 
 // SetupUserRoutes func sets up all the user routes
 func SetupUserRoutes() {
-	USER.Post("/signup", CreateUser)              // Sign Up a user
-	USER.Post("/signin", LoginUser)               // Sign In a user
-	USER.Get("/get-access-token", GetAccessToken) // returns a new access_token
-	//USER.Get("/authenticated", hello)
+	USER.Post("/signup", CreateUser) // Sign Up a user
+	USER.Post("/signin", LoginUser)  // Sign In a user
+	//USER.Get("/get-access-token", GetAccessToken) // returns a new access_token
+	USER.Get("/googlelogin", GoogleLogin)
+	USER.Get("/googlecallback", GoogleCallback)
 	USER.Get("/getbookstock", GetBookStock)
+	USER.Get("/getusername", GetUsername)
 
 	// privUser handles all the private user routes that requires authentication
 	privUser := USER.Group("/private")
