@@ -1,7 +1,7 @@
    var BookList = document.getElementById("BookList")
-   window['my'] = document.getElementById("Searchbar").value
+   /*window['my'] = document.getElementById("Searchbar").value
    var searchvalue = document.getElementById("Searchbar").value
-   localStorage.setItem('searchvalue', searchvalue);
+   localStorage.setItem('searchvalue', searchvalue);*/
 
    const DisplayBooks = async() => {
        const response = await fetch("/api/user/getbookstock");
@@ -41,7 +41,13 @@
        buybtn.id = ele.Bookid
        buybtn.className = "btn btn-outline-primary text-center mx-5 my-1 d-inline-block"
        buybtn.innerText = "Buy Now"
+       buybtn.addEventListener("click", Asktosignin)
        card.appendChild(buybtn)
        BookList.appendChild(card)
        console.log(card)
+   }
+
+   function Asktosignin(){
+       alert("You need to sign in first.")
+       window.location.href = "signin.html"
    }

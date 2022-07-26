@@ -90,7 +90,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	//redirect to home
-	return c.Redirect("/", 301)
+	return c.JSON(errors)
 }
 
 // LoginUser route logins a user in the app
@@ -137,6 +137,21 @@ func LoginUser(c *fiber.Ctx) error {
 	//redirect to private route
 	return c.Redirect("/api/user/private/", 301)
 
+}
+
+//this function logs out a user and reset the accesscookie to nil
+func Logout(c *fiber.Ctx) error {
+	c.ClearCookie()
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "access_token",
+		Value:    "0000",
+		Expires:  time.Now().Add(1 * time.Second),
+		HTTPOnly: true,
+		Secure:   true,
+	})
+
+	return nil
 }
 
 // GetAccessToken generates and sends a new access token iff there is a valid refresh token

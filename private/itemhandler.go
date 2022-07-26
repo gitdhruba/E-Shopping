@@ -4,6 +4,7 @@ import (
 	//"math/rand"
 
 	"fmt"
+	"strconv"
 
 	db "main.go/database"
 	"main.go/models"
@@ -238,8 +239,8 @@ func PlaceCartOrders(c *fiber.Ctx) error {
 
 	var book models.BookStock
 	var cart models.Cart
-	var skippeditems []models.Cart
 	var qnt uint32
+	var st = true
 	VerifiedUser := c.Cookies("username")
 
 	rows, _ := db.DB.Model(&models.Cart{}).Where("\"user\" = ?", VerifiedUser).Rows()
@@ -252,7 +253,7 @@ func PlaceCartOrders(c *fiber.Ctx) error {
 		res.Scan(&qnt)
 
 		if qnt < cart.Quantity {
-			skippeditems = append(skippeditems, cart)
+			st = false
 			continue
 		}
 
@@ -276,15 +277,15 @@ func PlaceCartOrders(c *fiber.Ctx) error {
 			fmt.Println("insert error")
 		}
 
+		if err := db.DB.Where("\"user\" = ? AND bookid = ? AND \"time\" = ?", VerifiedUser, cart.Bookid, cart.Time).Delete(&models.Cart{}).Error; err != nil {
+			fmt.Println("deletion error")
+		}
+
 	}
 
-	if err := db.DB.Where("\"user\" = ?", VerifiedUser).Delete(&models.Cart{}).Error; err != nil {
-		fmt.Println("deletion error")
-	}
-
-	fmt.Println(skippeditems)
-
-	return c.Status(fiber.StatusOK).JSON(skippeditems)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status": st,
+	})
 }
 
 //function for getting cart data
@@ -294,22 +295,31 @@ func GetCartData(c *fiber.Ctx) error {
 		Bookname   string
 		Time       string
 		Quantity   uint32
+		St         bool
 		Totalprice uint64
 	}
 
 	var cartitems []cartdata
 	var cartitem cartdata
 	var cart models.Cart
+	var qnt uint32
 	VerifiedUser := c.Cookies("username")
 
 	rows, _ := db.DB.Model(&models.Cart{}).Where("\"user\" = ?", VerifiedUser).Rows()
 	defer rows.Close()
 	for rows.Next() {
 		db.DB.ScanRows(rows, &cart)
+		qntres := db.DB.Model(&models.BookStock{}).Select("quantity").Where("bookid = ?", cart.Bookid)
+		qntres.Scan(&qnt)
 		cartitem.Bookid = cart.Bookid
 		cartitem.Bookname = cart.Bookname
 		cartitem.Time = cart.Time
 		cartitem.Quantity = cart.Quantity
+		if qnt < cart.Quantity {
+			cartitem.St = false
+		} else {
+			cartitem.St = true
+		}
 		cartitem.Totalprice = cart.Totalprice
 		cartitems = append(cartitems, cartitem)
 	}
@@ -347,4 +357,47 @@ func GetPurchaseData(c *fiber.Ctx) error {
 	fmt.Println(purchaseditems)
 
 	return c.JSON(purchaseditems)
+}
+
+/*
+   these functions are required to show the details of a selected book
+*/
+//create a cookie for bookid
+func CreateBookCookie(c *fiber.Ctx) error {
+	type iteminput struct {
+		Bookid string `json:"bookid"`
+	}
+	input := new(iteminput)
+	if err := c.BodyParser(input); err != nil {
+		return c.JSON(fiber.Map{
+			"error": true,
+			"msg":   "cannot parse data",
+		})
+	}
+	c.Cookie(&fiber.Cookie{
+		Name:     "id_of_book_to_be_shown",
+		Value:    fmt.Sprint(input.Bookid),
+		HTTPOnly: true,
+		Secure:   true,
+	})
+
+	return c.JSON(fiber.Map{
+		"error": false,
+		"msg":   "cookiecreation successfull",
+	})
+}
+
+//use cookie value to identify the book
+func ShowBook(c *fiber.Ctx) error {
+	idstr := c.Cookies("id_of_book_to_be_shown")
+	bookid, _ := strconv.Atoi(idstr)
+
+	var book models.BookStock
+	if res := db.DB.Model(&book).Where("bookid = ?", bookid).Find(&book); res.RowsAffected <= 0 {
+		fmt.Println("book not found")
+		return nil
+	}
+
+	return c.JSON(book)
+
 }

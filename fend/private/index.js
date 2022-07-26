@@ -1,8 +1,11 @@
    var BookList = document.getElementById("BookList")
    var user = document.getElementById("user")
+  // var logout = document.getElementById("logout")
    window['my'] = document.getElementById("Searchbar").value
    var searchvalue = document.getElementById("Searchbar").value
    localStorage.setItem('searchvalue', searchvalue);
+
+  // logout.addEventListener("click", Logout)
 
    const DisplayUser = async() => {
     const response = await fetch("/api/user/getusername");
@@ -43,7 +46,9 @@
        var bookname = document.createElement("p");
        bookname.className = "text-center p-1 m-1"
        bookname.innerText = ele.Bookname;
-       bookname.id = "book "+ele.Bookid;
+       bookname.id = ele.Bookid;
+       bookname.style = "cursor: pointer;"
+       bookname.addEventListener("click", function(){GotoProductpage(this.id)})
        card.appendChild(bookname)
        var quantity = document.createElement("p");
        quantity.className = "text-center p-1 m-1"
@@ -82,16 +87,27 @@
        console.log(card)
    }
 
-   /*function senddata(id){
-       console.log(id)
-       quantity = document.getElementById("qntinp "+id).value
-       //console.log(quantity)
-       if(quantity < 1){
-           alert("invalid quantity")
-       }else{
-           console.log(quantity)
+   async function GotoProductpage(id) {
+       const response = await fetch("/api/user/private/createbookcookie", {
+           method: 'POST',
+           body: JSON.stringify({
+               bookid: id,
+           }),
+           headers: {
+               'Content-Type' : 'application/json'
+           }
+       });
+       if(response.status !== 200) {
+           console.log("cannot fetch data");
        }
-   }*/
+       let data = await response.json();
+       if(data.error){
+           console.log("cookie could not be created");
+       } else {
+           window.location.href = "product.html";
+       }
+   }
+
 
    async function PurchaseItem(id) {
     console.log(Number(id))
@@ -150,6 +166,17 @@ async function AddItemtoCart(id){
             alert(data.msg)
         } else {
             alert("Item added to cart")
+            window.location.href = "carts.html"
         }
     }
 }
+
+/*async function Logout(){
+    const response = await fetch("/api/user/logout");
+    if (response.status !== 200) {
+        console.log("cannot fetch data");
+    }
+    let data = await response.json()
+    console.log(data)
+    
+}*/

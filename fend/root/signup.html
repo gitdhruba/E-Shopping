@@ -90,10 +90,19 @@
                         'Content-Type':'application/json'
                     }
                 })
-                const data = await res
-                //console.log(data)
-                if(data.redirected){
-                    location.assign(data.url)
+                const data = await res.json()
+                console.log(data)
+                if(data.error)
+                {
+                    if(data.username.length)
+                      alert(data.username)
+                    else if(data.email.length)
+                      alert(data.email)
+                    else 
+                      alert(data.password)
+                }else{
+                    alert("Sign up successfull.")
+                    window.location.href = "signin.html"
                 }
                 
             } catch (e) {
