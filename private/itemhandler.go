@@ -15,6 +15,7 @@ import (
 
 	//"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/lib/pq"
 )
 
 //function for entering purchased item details in DB
@@ -356,6 +357,8 @@ func GetPurchaseData(c *fiber.Ctx) error {
 	}
 	fmt.Println(purchaseditems)
 
+	//this is for testing purpose
+
 	return c.JSON(purchaseditems)
 }
 
@@ -390,14 +393,37 @@ func CreateBookCookie(c *fiber.Ctx) error {
 //use cookie value to identify the book
 func ShowBook(c *fiber.Ctx) error {
 	idstr := c.Cookies("id_of_book_to_be_shown")
-	bookid, _ := strconv.Atoi(idstr)
+	id, _ := strconv.Atoi(idstr)
+	type Relatedbook struct {
+		Bookid   uint32
+		Bookname string
+		Price    uint64
+	}
 
-	var book models.BookStock
-	if res := db.DB.Model(&book).Where("bookid = ?", bookid).Find(&book); res.RowsAffected <= 0 {
+	var selectedbook models.BookStock
+	var relatedbook Relatedbook
+	var relatedbooks []Relatedbook
+	if res := db.DB.Model(&selectedbook).Where("bookid = ?", id).Find(&selectedbook); res.RowsAffected <= 0 {
 		fmt.Println("book not found")
 		return nil
 	}
 
-	return c.JSON(book)
+	rows, err := db.DB.Model(&models.BookStock{}).Select("bookid", "bookname", "price").Where("catagory && ?", pq.StringArray(selectedbook.Catagory)).Rows()
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		db.DB.ScanRows(rows, &relatedbook)
+		if relatedbook.Bookid != uint32(id) {
+			relatedbooks = append(relatedbooks, relatedbook)
+		}
+	}
+
+	return c.JSON(fiber.Map{
+		"selectedbook": selectedbook,
+		"relatedbooks": relatedbooks,
+	})
 
 }

@@ -125,6 +125,18 @@
 
         </div>
 
+        <br>
+        <br>
+        <hr style="margin: 0 30px;">
+        <br>
+        <section class="similar-product">
+            <h2 class="product-category">Products from similar catagory</h2>
+        </section>
+
+        <div class="product-container" id="similar-product-container">
+
+        </div>
+
     <script src="product.js"></script>
     <script>
         // SIDE EFFECT IN  SIDENAV
@@ -138,6 +150,25 @@
        }
 
        DisplayBook();
+        
+        //arrow effect for similar product container
+       const productContainers = [...document.querySelectorAll('.product-container')];
+        const nxtBtn = [...document.querySelectorAll('.nxt-btn')];
+        const preBtn = [...document.querySelectorAll('.pre-btn')];
+
+        productContainers.forEach((item, i) => {
+            let containerDimenstions = item.getBoundingClientRect();
+            let containerWidth = containerDimenstions.width;
+
+            nxtBtn[i].addEventListener('click', () => {
+                 item.scrollLeft += containerWidth;
+            })
+
+            preBtn[i].addEventListener('click', () => {
+                 item.scrollLeft -= containerWidth;
+            })
+        })
+
     </script>
 
     </body>

@@ -209,11 +209,17 @@ func GetAccessToken(c *fiber.Ctx) error {
 
 //funtion to get bookstock
 func GetBookStock(c *fiber.Ctx) error {
+	type Bookdata struct {
+		Bookid   uint32
+		Bookname string
+		Quantity uint32
+		Price    uint64
+	}
 
-	var Books []models.BookStock
-	var Book models.BookStock
+	var Books []Bookdata
+	var Book Bookdata
 
-	rows, _ := db.DB.Model(&models.BookStock{}).Rows()
+	rows, _ := db.DB.Model(&models.BookStock{}).Select("bookid", "bookname", "quantity", "price").Rows()
 	defer rows.Close()
 	for rows.Next() {
 		db.DB.ScanRows(rows, &Book)

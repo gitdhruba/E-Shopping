@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -51,14 +52,9 @@ func (base *Base) AfterUpdate(tx *gorm.DB) error {
 type BookStock struct {
 	Bookid   uint32
 	Bookname string
-	Catagory []string
+	Catagory pq.StringArray `gorm:"type:text[]"`
 	Quantity uint32
 	Price    uint64
-}
-
-type BookCatagory struct {
-	Catagory string
-	Bookid   []uint32
 }
 
 //Item contains the common structure of each book purchased by user
@@ -82,9 +78,16 @@ type Cart struct {
 }
 
 //user reviews model
-type Userreview struct {
+/*type Userreview struct {
 	User    string
 	Bookid  uint32
 	Star    uint8
 	Remarks string
 }
+*/
+
+/*type Test struct {
+	Field1 int
+	Field2 pq.StringArray `gorm:"type:text[]"`
+}
+*/

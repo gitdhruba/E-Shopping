@@ -40,6 +40,6 @@ func ConnectDB() {
 
 	//automigration
 	log.Print("Running the migrations...")
-	DB.AutoMigrate(&models.User{}, &models.Claims{}, &models.Item{}, &models.BookStock{}, &models.Cart{})
+	DB.AutoMigrate(&models.User{}, &models.Claims{}, &models.BookStock{}, &models.Cart{}, &models.Item{})
 
 }
