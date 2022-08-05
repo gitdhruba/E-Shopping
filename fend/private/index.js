@@ -1,5 +1,6 @@
    var BookList = document.getElementById("BookList")
    var user = document.getElementById("user")
+   var catagorylist = document.getElementById("catagorylist")
   // var logout = document.getElementById("logout")
    window['my'] = document.getElementById("Searchbar").value
    var searchvalue = document.getElementById("Searchbar").value
@@ -22,13 +23,18 @@
            console.log("cannot fetch data");
        }
        let data = await response.json();
-       console.log(data[1])
+       //console.log(data[1])
 
-       data.forEach(ele => {
+       data.books.forEach(ele => {
            //Creating Card
            CreateCards(ele);
 
        });
+
+       data.catagories.forEach(ele => {
+           addcatagory(ele)
+       })
+       
 
    };
 
@@ -87,6 +93,17 @@
        console.log(card)
    }
 
+   function addcatagory(ele) {
+        var cat = document.createElement("p")
+        cat.className = "dropdown-item"
+        cat.id = ele
+        cat.innerText = ele
+        cat.style = "cursor: pointer;"
+        cat.addEventListener("click", function(){Gotofilteredproductpage(this.id)})
+        catagorylist.appendChild(cat)
+   }
+
+
    async function GotoProductpage(id) {
        const response = await fetch("/api/user/private/createbookcookie", {
            method: 'POST',
@@ -106,6 +123,27 @@
        } else {
            window.location.href = "product.html";
        }
+   }
+
+   async function Gotofilteredproductpage(id){
+         const response = await fetch("/api/user/createcatagorycookie", {
+             method: 'POST',
+             body: JSON.stringify({
+                 catagory: id,
+             }),
+             headers: {
+                 'Content-Type' : 'application/json'
+             }
+         });
+         if(response.status !== 200) {
+             console.log("cannot fetch data");
+         }
+         let data = await response.json();
+         if(data.error){
+             console.log("cookie could not be created");
+         } else {
+             window.location.href = "filtered.html";
+         }
    }
 
 

@@ -9,8 +9,8 @@
            console.log("cannot fetch data");
        }
        let data = await response.json();
-       console.log(data.length);
-       data.forEach(ele => {
+       //console.log(data.length);
+       data.books.forEach(ele => {
            //Creating Card
            CreateCards(ele);
 

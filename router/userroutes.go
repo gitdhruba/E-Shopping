@@ -15,6 +15,8 @@ func SetupUserRoutes() {
 	USER.Get("/googlecallback", GoogleCallback)
 	USER.Get("/getbookstock", GetBookStock)
 	USER.Get("/getusername", GetUsername)
+	USER.Post("/createcatagorycookie", CreateCatagoryCookie)
+	USER.Get("/getfilteredbooks", Getfilteredbooks)
 
 	// privUser handles all the private user routes that requires authentication
 	privUser := USER.Group("/private")

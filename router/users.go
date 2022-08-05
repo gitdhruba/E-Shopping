@@ -23,6 +23,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/lib/pq"
 )
 
 var jwtKey = []byte("key")
@@ -218,8 +219,79 @@ func GetBookStock(c *fiber.Ctx) error {
 
 	var Books []Bookdata
 	var Book Bookdata
+	var Catagories []string
+	catlist := make(map[string]bool)
+	var book models.BookStock
 
-	rows, _ := db.DB.Model(&models.BookStock{}).Select("bookid", "bookname", "quantity", "price").Rows()
+	rows, _ := db.DB.Model(&models.BookStock{}).Rows()
+	defer rows.Close()
+	for rows.Next() {
+		db.DB.ScanRows(rows, &book)
+		Book.Bookid = book.Bookid
+		Book.Bookname = book.Bookname
+		Book.Quantity = book.Quantity
+		Book.Price = book.Price
+		for _, e := range book.Catagory {
+			catlist[e] = true
+		}
+		if Book.Quantity > 0 {
+			Books = append(Books, Book)
+		}
+	}
+
+	for cat := range catlist {
+		Catagories = append(Catagories, cat)
+	}
+
+	// fmt.Println(Books)
+	// fmt.Println(Catagories)
+
+	return c.JSON(fiber.Map{
+		"books":      Books,
+		"catagories": Catagories,
+	})
+}
+
+//function for catagory wise sorting
+func CreateCatagoryCookie(c *fiber.Ctx) error {
+	type catagoryinput struct {
+		Catagory string `json:"catagory"`
+	}
+	input := new(catagoryinput)
+	if err := c.BodyParser(input); err != nil {
+		fmt.Println("Parsing error")
+		return c.JSON(fiber.Map{
+			"error": true,
+		})
+	}
+	c.Cookie(&fiber.Cookie{
+		Name:     "bookcatagory",
+		Value:    input.Catagory,
+		HTTPOnly: true,
+		Secure:   true,
+	})
+
+	return c.JSON(fiber.Map{
+		"error": false,
+	})
+}
+
+func Getfilteredbooks(c *fiber.Ctx) error {
+	cat := c.Cookies("bookcatagory")
+	var catagory pq.StringArray
+	catagory = append(catagory, cat)
+
+	type Bookdata struct {
+		Bookid   uint32
+		Bookname string
+		Quantity uint32
+		Price    uint64
+	}
+
+	var Books []Bookdata
+	var Book Bookdata
+
+	rows, _ := db.DB.Model(&models.BookStock{}).Select("bookid", "bookname", "quantity", "price").Where("catagory && ?", pq.StringArray(catagory)).Rows()
 	defer rows.Close()
 	for rows.Next() {
 		db.DB.ScanRows(rows, &Book)
