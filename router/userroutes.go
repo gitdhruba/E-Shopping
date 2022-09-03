@@ -27,10 +27,11 @@ func SetupUserRoutes() {
 	privUser.Post("/deleteentry", private.DeleteEntry)
 	privUser.Post("/addtocart", private.AddtoCart)
 	privUser.Post("/deletefromcart", private.DeletefromCart)
-	privUser.Get("/placecartorders", private.PlaceCartOrders)
+	privUser.Post("/placecartorders", private.PlaceCartOrders)
 	privUser.Get("/getcartdata", private.GetCartData)
 	privUser.Get("/getpurchasedata", private.GetPurchaseData)
 	privUser.Post("/createbookcookie", private.CreateBookCookie)
 	privUser.Get("/showbook", private.ShowBook)
+	privUser.Post("/trackpage", private.TrackPackage)
 
 }

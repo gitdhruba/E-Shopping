@@ -59,12 +59,15 @@ type BookStock struct {
 
 //Item contains the common structure of each book purchased by user
 type Item struct {
-	User       string `json:"username"`
-	Bookid     uint32 `json:"bookid"`
-	Bookname   string `json:"bookname"`
-	Time       string `json:"time"`
-	Quantity   uint32 `json:"quantity"`
-	Totalprice uint64 `json:"price"`
+	User            string `json:"username"`
+	OrderID         uuid.UUID
+	Bookid          uint32 `json:"bookid"`
+	Bookname        string `json:"bookname"`
+	Time            string `json:"time"`
+	Quantity        uint32 `json:"quantity"`
+	Totalprice      uint64 `json:"price"`
+	ShippingAddress string
+	PaymentMethod   string
 }
 
 //cart model
@@ -76,18 +79,3 @@ type Cart struct {
 	Quantity   uint32 `json:"quantity"`
 	Totalprice uint64 `json:"price"`
 }
-
-//user reviews model
-/*type Userreview struct {
-	User    string
-	Bookid  uint32
-	Star    uint8
-	Remarks string
-}
-*/
-
-/*type Test struct {
-	Field1 int
-	Field2 pq.StringArray `gorm:"type:text[]"`
-}
-*/

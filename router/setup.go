@@ -13,6 +13,7 @@ var USER fiber.Router
 
 // SetupRoutes setups all the Routes
 func SetupRoutes(app *fiber.App) {
+
 	api := app.Group("/api")
 	//auth := app.Group("/authenticated")
 	//api.Get("/", hello)

@@ -15,6 +15,7 @@ import (
 
 	//"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -22,8 +23,10 @@ import (
 func CreateEntry(c *fiber.Ctx) error {
 
 	type iteminput struct {
-		Bookid   uint32 `json:"bookid"`
-		Quantity uint32 `json:"quantity"`
+		Bookid          uint32 `json:"bookid"`
+		Quantity        uint32 `json:"quantity"`
+		ShippingAddress string `json:"shippingaddress"`
+		PaymentMethod   string `json:"paymentmethod"`
 	}
 
 	input := new(iteminput)
@@ -41,12 +44,15 @@ func CreateEntry(c *fiber.Ctx) error {
 	t := models.GetTimeNow()
 	fmt.Println(t)
 	item := models.Item{
-		User:       VerifiedUser,
-		Bookid:     book.Bookid,
-		Bookname:   book.Bookname,
-		Time:       t,
-		Quantity:   input.Quantity,
-		Totalprice: (uint64(input.Quantity) * (book.Price)),
+		User:            VerifiedUser,
+		OrderID:         uuid.New(),
+		Bookid:          book.Bookid,
+		Bookname:        book.Bookname,
+		Time:            t,
+		Quantity:        input.Quantity,
+		Totalprice:      (uint64(input.Quantity) * (book.Price)),
+		ShippingAddress: input.ShippingAddress,
+		PaymentMethod:   input.PaymentMethod,
 	}
 
 	fmt.Println(book)
@@ -123,6 +129,14 @@ func DeleteEntry(c *fiber.Ctx) error {
 			"status": "Deletion error",
 		})
 	}
+
+	//test time
+	/*then, _ := time.Parse("2022-08-14 14:25", input.Time)
+	fmt.Println(then)
+	now, _ := time.Parse("2022-8-14 14:25", time.Now().Format("2022-8-14 14:25"))
+	fmt.Println(now)
+	delta := now.Sub(then)
+	fmt.Println(delta.Hours())*/
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":  false,
@@ -237,7 +251,15 @@ func DeletefromCart(c *fiber.Ctx) error {
 
 //function to place cart orders
 func PlaceCartOrders(c *fiber.Ctx) error {
-
+	type checkout struct {
+		ShippingAddress string `json:"shippingaddress"`
+		PaymentMethod   string `json:"paymentmethod"`
+	}
+	input := new(checkout)
+	if err := c.BodyParser(input); err != nil {
+		fmt.Println("parsing error")
+		return nil
+	}
 	var book models.BookStock
 	var cart models.Cart
 	var qnt uint32
@@ -259,15 +281,17 @@ func PlaceCartOrders(c *fiber.Ctx) error {
 		}
 
 		qnt = qnt - cart.Quantity
-		t := models.GetTimeNow()
 
 		item := models.Item{
-			User:       cart.User,
-			Bookid:     cart.Bookid,
-			Bookname:   cart.Bookname,
-			Time:       t,
-			Quantity:   cart.Quantity,
-			Totalprice: cart.Totalprice,
+			User:            cart.User,
+			OrderID:         uuid.New(),
+			Bookid:          cart.Bookid,
+			Bookname:        cart.Bookname,
+			Time:            models.GetTimeNow(),
+			Quantity:        cart.Quantity,
+			Totalprice:      cart.Totalprice,
+			ShippingAddress: input.ShippingAddress,
+			PaymentMethod:   input.PaymentMethod,
 		}
 
 		if err := db.DB.Model(&book).Where("bookid = ?", cart.Bookid).Update("quantity", qnt).Error; err != nil {
@@ -426,4 +450,28 @@ func ShowBook(c *fiber.Ctx) error {
 		"relatedbooks": relatedbooks,
 	})
 
+}
+
+//Track Package
+func TrackPackage(c *fiber.Ctx) error {
+	type iteminput struct {
+		Bookid uint32 `json:"bookid"`
+		Time   string `json:"time"`
+	}
+
+	input := new(iteminput)
+	if err := c.BodyParser(input); err != nil {
+		return c.JSON(fiber.Map{
+			"error":  true,
+			"status": "incorrect input",
+		})
+	}
+
+	VerifiedUser := c.Cookies("username")
+	var item models.Item
+	resitem := db.DB.Where("\"user\" = ? AND bookid = ? AND \"time\" = ?", VerifiedUser, input.Bookid, input.Time).Find(&item)
+	resitem.Scan(&item)
+	fmt.Println(item)
+
+	return c.JSON(item)
 }
